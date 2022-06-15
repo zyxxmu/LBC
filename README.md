@@ -1,6 +1,6 @@
 # Learning Best Combination for Efficient N:M Sparsity
 
-This a Pytorch implementation of our paper "Learning Best Combination for Efficient N:M Sparsity"
+Pytorch implementation of our paper "Learning Best Combination for Efficient N:M Sparsity" ([Link](https://arxiv.org/abs/2206.06662))
 
 ## Data Preparation
 
@@ -55,3 +55,4 @@ python eval.py --pretrain_dir PATH_TO_CHECKPOINTS --gpus 0 --train_batch_size 25
 cd DeiT-small
 python3 -m torch.distributed.launch --nproc_per_node=4  --use_env main.py --model vit_deit_small_patch16_224 --batch-size 256 --data-path PATH_TO_DATASETS --output_dir PATH_TO_JOB_DIR --resume PATH_TO_CHECKPOINTS --eval
 ```
+
