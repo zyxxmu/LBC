@@ -1,7 +1,6 @@
 # Learning Best Combination for Efficient N:M Sparsity
 
-Pytorch implementation of our paper "Learning Best Combination for Efficient N:M Sparsity" ([Link](https://arxiv.org/abs/2206.06662))
-
+Pytorch implementation of our paper accepted by NeurIPS 2022 -- "Learning Best Combination for Efficient N:M Sparsity" ([Link](https://arxiv.org/abs/2206.06662))
 ## Data Preparation
 
 - The ImageNet dataset should be prepared as follows:
