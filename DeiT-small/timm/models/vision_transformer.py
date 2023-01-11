@@ -34,15 +34,17 @@ from .layers import StdConv2dSame, DropPath, to_2tuple, trunc_normal_
 from .resnet import resnet26d, resnet50d
 from .resnetv2 import ResNetV2
 from .registry import register_model
+from itertools import combinations
+import pdb
 
 _logger = logging.getLogger(__name__)
 
-class NMConv(nn.Conv2d):
-    def __init__(self,*args, **kwargs):
+class NMLinear(nn.Linear):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.N = 2  # number of non-zeros
         self.M = 4
-        self.mask_shape = self.weight.clone().permute(0, 2, 3, 1).shape
+        self.mask_shape = self.weight.clone().shape
         self.group = int(self.weight.numel() / self.M)
         self.alpha, self.index_list = self.init(self.N, self.M)
 
@@ -64,10 +66,8 @@ class NMConv(nn.Conv2d):
         alpha = self.alpha * index
         mask = (alpha @ self.index_list).reshape(self.mask_shape)
         mask = GetMask.apply(mask)
-        sparseWeight = mask.permute(0,3,1,2) * self.weight
-        x = F.conv2d(
-            x, sparseWeight, self.bias, self.stride, self.padding, self.dilation, self.groups
-        )
+        sparseWeight = mask * self.weight
+        x = F.linear(x, sparseWeight, self.bias)
         return x
 
 class GetMask(autograd.Function):
@@ -184,9 +184,9 @@ class Mlp(nn.Module):
         super().__init__()
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
-        self.fc1 = NMConv(in_features, hidden_features,bias=True)
+        self.fc1 = NMLinear(in_features, hidden_features)
         self.act = act_layer()
-        self.fc2 = NMConv(hidden_features, out_features, bias=True)
+        self.fc2 = NMLinear(hidden_features, out_features)
         self.drop = nn.Dropout(drop)
 
     def forward(self, x):
@@ -205,14 +205,15 @@ class Attention(nn.Module):
         head_dim = dim // num_heads
         # NOTE scale factor was wrong in my original version, can set manually to be compat with prev weights
         self.scale = qk_scale or head_dim ** -0.5
-
-        self.qkv = NMConv(dim, dim * 3, bias=qkv_bias)
+ 
+        self.qkv = NMLinear(dim, dim * 3, bias=qkv_bias)
         self.attn_drop = nn.Dropout(attn_drop)
-        self.proj = NMConv(dim, dim, bias=True)
+        self.proj = NMLinear(dim, dim)
         self.proj_drop = nn.Dropout(proj_drop)
 
     def forward(self, x):
         B, N, C = x.shape
+
         qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
         q, k, v = qkv[0], qkv[1], qkv[2]   # make torchscript happy (cannot use tensor as tuple)
 
@@ -367,7 +368,7 @@ class VisionTransformer(nn.Module):
         if representation_size:
             self.num_features = representation_size
             self.pre_logits = nn.Sequential(OrderedDict([
-                ('fc', NMConv(embed_dim, representation_size, bias=True)),
+                ('fc', NMLinear(embed_dim, representation_size)),
                 ('act', nn.Tanh())
             ]))
         else:
@@ -381,13 +382,15 @@ class VisionTransformer(nn.Module):
         self.apply(self._init_weights)
 
     def _init_weights(self, m):
-        if isinstance(m, NMConv):
+        if isinstance(m, NMLinear):
             trunc_normal_(m.weight, std=.02)
-            if isinstance(m, NMConv) and m.bias is not None:
+            if isinstance(m, NMLinear) and m.bias is not None:
                 nn.init.constant_(m.bias, 0)
         elif isinstance(m, nn.LayerNorm):
             nn.init.constant_(m.bias, 0)
             nn.init.constant_(m.weight, 1.0)
+            
+
 
     @torch.jit.ignore
     def no_weight_decay(self):

@@ -15,20 +15,21 @@ from timm.utils import accuracy, ModelEma
 from losses import DistillationLoss
 import utils
 
-def remove_alpha(model):
+
+def remove_alpha(model,k):
     with torch.no_grad():
         for n, alphas in model.module.named_parameters():
             if 'alpha' in n:
                 index0 = alphas == 0
                 alphas -= index0 * 1000
-                value, index = torch.topk(alphas, k=args.k, dim=1, largest=False)
+                value, index = torch.topk(alphas, k=k, dim=1, largest=False)
                 alphas.scatter_(1, index, 0)
                 
 def train_one_epoch(model: torch.nn.Module, criterion: DistillationLoss,
                     data_loader: Iterable, optimizer: torch.optim.Optimizer,
                     device: torch.device, epoch: int, loss_scaler, max_norm: float = 0,
                     model_ema: Optional[ModelEma] = None, mixup_fn: Optional[Mixup] = None,
-                    set_training_mode=True):
+                    set_training_mode=True,k: int = 0):
     model.train(set_training_mode)
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
@@ -36,7 +37,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: DistillationLoss,
     print_freq = 10
     for samples, targets in metric_logger.log_every(data_loader, print_freq, header):
 
-        remove_alpha(model)
+        remove_alpha(model,k)
         samples = samples.to(device, non_blocking=True)
         targets = targets.to(device, non_blocking=True)
 
