@@ -29,7 +29,7 @@ ImageNet
 
 ```bash
 cd ResNet
-python imagenet.py --job_dir PATH_TO_JOB_DIR --t_i 0 --t_f 60 --gpus 0 1 2 3 --train_batch_size 256 --eval_batch_size 256 --lr 0.1 --label-smoothing 0.1 --N 2 --M 4 --data_path PATH_TO_DATASETS
+python imagenet.py --job_dir PATH_TO_JOB_DIR --t_i 0 --t_f 60 --gpus 0 1 2 3 --train_batch_size 256 --eval_batch_size 256 --lr 0.1 --label_smoothing 0.1 --N 2 --M 4 --data_path PATH_TO_DATASETS
 ```
 
 - DeiT-small on ImageNet
@@ -45,7 +45,7 @@ Besides, we provide our trained models and experiment logs at [Google Drive](htt
 
 ```bash
 cd ResNet
-python eval.py --pretrain_dir PATH_TO_CHECKPOINTS --gpus 0 --train_batch_size 256 --eval_batch_size 256  --label-smoothing 0.1 --N 2 --M 4 --data_path PATH_TO_DATASETS
+python eval.py --pretrain_dir PATH_TO_CHECKPOINTS --gpus 0 --train_batch_size 256 --eval_batch_size 256  --label_smoothing 0.1 --N 2 --M 4 --data_path PATH_TO_DATASETS
 ```
 
 - DeiT-small on ImageNet

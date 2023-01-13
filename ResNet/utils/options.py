@@ -39,6 +39,13 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    '--pretrain_dir',
+    type=str,
+    default='resnet2-4.pt',
+    help='The directory where the pretrain model is stored. default:resnet2-4.pt'
+)
+
+parser.add_argument(
     '--resume',
     action='store_true',
     help='Load the model from the specified checkpoint.'
